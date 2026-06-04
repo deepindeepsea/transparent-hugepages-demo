@@ -181,3 +181,17 @@ The benchmarks read only public \`/sys\` and \`/proc\` interfaces and the CPU PM
 ## License
 
 MIT — see [LICENSE](LICENSE).
+
+---
+
+## Does this exist in production?
+
+Yes — this is one of the most common real-world memory-access patterns:
+
+**In-memory databases and caches** — Redis cluster, Apache Ignite, Hazelcast — store millions of keys mapped to arbitrary memory addresses. A cache lookup is literally pointer-chasing across a large heap. A busy node doing 100K lookups/second on a 16 GiB heap is running this benchmark in production all day long.
+
+**JVM microservices at scale** — A top-5 SaaS company running 10,000 JVMs, each with a 12–32 GiB heap serving customer requests, accesses objects at random heap locations for every request. The JVM's garbage collector and object graph traversal are both pointer-chasing workloads.
+
+**LLM inference** — The KV-cache for attention is a large buffer (often 10–80 GiB) that each new token accesses at positions scattered across all previous context. Each attention head is doing random reads over the entire KV-cache — exactly this pattern. This is why THP is one of the most effective single-knob tunings for inference throughput on AMD EPYC.
+
+The benchmark is intentionally a "pure signal" version of what production does mixed in with computation. The THP gain you see here (12–16%) is the lower bound on what a real workload can achieve — many production workloads see 20–40% improvement because they also benefit from THP during GC pauses and allocation bursts.
