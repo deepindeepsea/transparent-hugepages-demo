@@ -1,0 +1,11 @@
+# build artifacts
+*.class
+microbench
+*.o
+# results
+/tmp/thp_results/
+thp_results/
+results/
+# editor
+*.swp
+.DS_Store
